@@ -30,3 +30,8 @@ Step 5.
 Store alb url in a variable and put the load for simulation.
 
 while true; do curl -so /dev/null $alb_url ; sleep 1 ; done &
+
+while true; do ab -l -c 9 -t 1200 curl -so /dev/null $alb_url ; sleep 1 ; done &
+
+
+ab = apache bench load
