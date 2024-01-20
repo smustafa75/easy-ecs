@@ -25,3 +25,8 @@ Add autoscaling:
 aws application-autoscaling register-scalable-target --resource-id service/base-repo/base-repo --service-namespace ecs --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 20 --role-arn arn:aws:iam::AWS_ACCT_ID:role/ecsServiceAutoScalingrole --region eu-west-1 --profile AWS_PROFILE
 
 aws application-autoscaling put-scaling-policy --cli-input-json file://scale-out.json --region eu-west-1 --profile AWS_PROFILE
+
+Step 5.
+Store alb url in a variable and put the load for simulation.
+
+while true; do curl -so /dev/null $alb_url ; sleep 1 ; done &
