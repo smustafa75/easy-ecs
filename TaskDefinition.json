@@ -1,0 +1,37 @@
+{
+    "family":"base-repo",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu":"256",
+    "memory":"512",
+    "networkMode":"awsvpc",
+    "executionRoleArn":"arn:aws:iam::AWS_ACCT_ID:role/ecsTaskExecutionRole",
+    "taskRoleArn":"arn:aws:iam::AWS_ACCT_ID:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+        {
+        "name":"base-repo",
+        "image":"AWS_ACCT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo:latest",
+        "essential":true,
+        "portMappings": [
+            {
+                "containerPort": 80,
+                "hostPort": 80,
+                "protocol": "tcp"
+            }
+        ],
+        "logConfiguration": {
+            "logDriver":"awslogs",
+            "options": {
+                "awslogs-group":"/ecs/welcome",
+                "awslogs-region":"eu-west-1",
+                "awslogs-stream-prefix":"ecs"
+            }
+
+            }
+
+        }
+
+    ]
+
+}

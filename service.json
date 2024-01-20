@@ -1,0 +1,22 @@
+{
+    "cluster":"base-repo",
+    "serviceName":"base-repo",
+    "taskDefinition":"base-repo",
+    "desiredCount":1,
+    "launchType":"FARGATE",
+    "platformVersion":"LATEST",
+    "loadBalancers": [
+        {
+            "targetGroupArn":"arn:aws:elasticloadbalancing:eu-west-1:AWS_ACCT_ID:targetgroup/welcome-tg/d937d0debedb03a2",
+            "containerName":"base-repo",
+            "containerPort":80
+        }
+    ],
+    "networkConfiguration":{
+        "awsvpcConfiguration": {
+            "subnets":[ "subnet-09a4d3fa0f50ad765", "subnet-08096003cda550649" ],
+            "securityGroups": [ "sg-0ef5035644f0b2139" ],
+            "assignPublicIp":"DISABLED"
+        }
+    }
+}
