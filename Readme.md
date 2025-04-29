@@ -1,37 +1,116 @@
-1x ALB and TargetGroup should be there.
-1x docker file that you can compile and push from local system to AWS ECR.
+# Easy-ECS
 
+A streamlined toolkit for deploying containerized applications to AWS Elastic Container Service (ECS) with Fargate.
 
-Step 1.
+## Overview
+
+Easy-ECS provides a set of configuration templates and step-by-step instructions to quickly deploy Docker containers to AWS ECS Fargate. The project includes:
+
+- Task definition templates
+- Service configuration
+- Auto-scaling policies
+- Load testing utilities
+
+## Prerequisites
+
+- AWS CLI configured with appropriate permissions
+- Docker installed locally
+- An AWS account with access to:
+  - Amazon ECR (Elastic Container Registry)
+  - Amazon ECS (Elastic Container Service)
+  - AWS IAM (Identity and Access Management)
+  - Amazon VPC (Virtual Private Cloud)
+  - AWS Application Auto Scaling
+
+## Deployment Steps
+
+### 1. Authenticate with Amazon ECR
+
+```bash
 docker logout public.ecr.aws
-aws ecr get-login-password --region eu-west-1 --profile AWS_PROFILE | docker login --username AWS --password-stdin AWS_ACCT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo
+aws ecr get-login-password --region eu-west-1 --profile YOUR_AWS_PROFILE | docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo
+```
 
-Step 2.
+### 2. Create Repository and Push Docker Image
+
+```bash
+# Create ECR repository
 aws ecr create-repository --repository-name base-repo --image-tag-mutability IMMUTABLE
+
+# Build Docker image
 docker build -t base-repo .
 
-docker tag base-repo:latest AWS_ACCT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo:latest
-docker push AWS_ACCT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo:latest
+# Tag and push to ECR
+docker tag base-repo:latest YOUR_AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo:latest
+docker push YOUR_AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/base-repo:latest
+```
 
-Step 3.
-aws ecs register-task-definition --cli-input-json file://TaskDefinition.json --region eu-west-1 --query 'taskDefinition.taskDefinitionArn' --profile citrus_lab
+### 3. Deploy ECS Resources
 
-aws ecs create-cluster --cluster-name base-repo --region eu-west-1 --profile AWS_PROFILE
+```bash
+# Register task definition
+aws ecs register-task-definition --cli-input-json file://TaskDefinition.json --region eu-west-1 --query 'taskDefinition.taskDefinitionArn' --profile YOUR_AWS_PROFILE
 
-aws ecs create-service --cli-input-json file://service.json  --region eu-west-1 --profile AWS_PROFILE
+# Create ECS cluster
+aws ecs create-cluster --cluster-name base-repo --region eu-west-1 --profile YOUR_AWS_PROFILE
 
-Step 4.
-Add autoscaling:
-aws application-autoscaling register-scalable-target --resource-id service/base-repo/base-repo --service-namespace ecs --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 20 --role-arn arn:aws:iam::AWS_ACCT_ID:role/ecsServiceAutoScalingrole --region eu-west-1 --profile AWS_PROFILE
+# Create ECS service
+aws ecs create-service --cli-input-json file://service.json --region eu-west-1 --profile YOUR_AWS_PROFILE
+```
 
-aws application-autoscaling put-scaling-policy --cli-input-json file://scale-out.json --region eu-west-1 --profile AWS_PROFILE
+### 4. Configure Auto-scaling
 
-Step 5.
-Store alb url in a variable and put the load for simulation.
+```bash
+# Register scalable target
+aws application-autoscaling register-scalable-target \
+  --resource-id service/base-repo/base-repo \
+  --service-namespace ecs \
+  --scalable-dimension ecs:service:DesiredCount \
+  --min-capacity 1 \
+  --max-capacity 20 \
+  --role-arn arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/ecsServiceAutoScalingrole \
+  --region eu-west-1 \
+  --profile YOUR_AWS_PROFILE
 
-while true; do curl -so /dev/null $alb_url ; sleep 1 ; done &
+# Apply scaling policy
+aws application-autoscaling put-scaling-policy --cli-input-json file://scale-out.json --region eu-west-1 --profile YOUR_AWS_PROFILE
+```
 
-while true; do ab -l -c 9 -t 1200 curl -so /dev/null $alb_url ; sleep 1 ; done &
+### 5. Load Testing
 
+Store your ALB URL in a variable and run load tests:
 
-ab = apache bench load
+```bash
+# Simple continuous requests
+while true; do curl -so /dev/null $alb_url; sleep 1; done &
+
+# Apache Bench load testing
+while true; do ab -l -c 9 -t 1200 curl -so /dev/null $alb_url; sleep 1; done &
+```
+
+## Configuration Files
+
+### TaskDefinition.json
+
+Defines the Fargate task with CPU, memory, networking, and container specifications.
+
+### service.json
+
+Configures the ECS service with load balancer integration and networking settings.
+
+### scale-out.json
+
+Defines auto-scaling policies based on CPU utilization metrics.
+
+## Notes
+
+- Before deployment, update all placeholder values (YOUR_AWS_PROFILE, YOUR_AWS_ACCOUNT_ID) in the commands and configuration files
+- Ensure your AWS account has the necessary IAM roles created (ecsTaskExecutionRole, ecsServiceAutoScalingrole)
+- The default configuration uses private subnets with no public IP assignment
+- Auto-scaling is configured to trigger when CPU utilization exceeds 50%
+
+## Requirements
+
+- AWS CLI version 2.0+
+- Docker 19.03+
+- Apache Bench (ab) for load testing
